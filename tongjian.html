@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鉴·通俗版 — 资治通鉴·第九特区风格改写</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1209;
+    --ink-light: #3d2e1a;
+    --ink-faint: #6b5740;
+    --paper: #f5efe3;
+    --paper-dark: #ede4d0;
+    --paper-darker: #e0d4bb;
+    --red: #8b1a1a;
+    --red-light: #c0392b;
+    --gold: #9a7d3a;
+    --gold-light: #c9a84c;
+    --sidebar-w: 300px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* ── TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: #1a1209;
+    position: fixed;
+    top: 0; left: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    border-right: 2px solid var(--gold);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+  }
+
+  #sidebar-header {
+    padding: 32px 24px 20px;
+    border-bottom: 1px solid #3d2e1a;
+  }
+
+  .sidebar-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 28px;
+    color: var(--gold-light);
+    line-height: 1.2;
+    letter-spacing: 4px;
+  }
+
+  .sidebar-subtitle {
+    font-size: 11px;
+    color: #6b5740;
+    margin-top: 6px;
+    letter-spacing: 2px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  #toc {
+    flex: 1;
+    padding: 16px 0;
+  }
+
+  .vol-group { margin-bottom: 4px; }
+
+  .vol-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--gold);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 500;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+    user-select: none;
+  }
+
+  .vol-header:hover { background: rgba(154,125,58,0.1); }
+
+  .vol-arrow {
+    font-size: 10px;
+    transition: transform 0.25s;
+    color: var(--gold);
+    opacity: 0.6;
+  }
+  .vol-header.open .vol-arrow { transform: rotate(90deg); }
+
+  .chapter-list {
+    display: none;
+    padding: 0 0 8px 0;
+  }
+  .chapter-list.open { display: block; }
+
+  .chapter-item {
+    display: block;
+    padding: 8px 24px 8px 36px;
+    font-size: 12px;
+    color: #a89070;
+    text-decoration: none;
+    font-family: 'Noto Sans SC', sans-serif;
+    line-height: 1.5;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    margin-left: 22px;
+    cursor: pointer;
+  }
+
+  .chapter-item:hover {
+    color: var(--gold-light);
+    border-left-color: var(--gold);
+    background: rgba(154,125,58,0.06);
+  }
+
+  .chapter-item.active {
+    color: var(--gold-light);
+    border-left-color: var(--gold-light);
+    background: rgba(154,125,58,0.12);
+  }
+
+  .chapter-item.locked {
+    color: #3d2e1a;
+    cursor: default;
+  }
+  .chapter-item.locked:hover {
+    border-left-color: transparent;
+    background: none;
+  }
+
+  .coming-badge {
+    font-size: 9px;
+    background: #2a1f0e;
+    color: #6b5740;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    height: 56px;
+    background: rgba(245,239,227,0.95);
+    border-bottom: 1px solid var(--paper-darker);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(8px);
+    gap: 20px;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--ink-faint);
+    font-family: 'Noto Sans SC', sans-serif;
+    flex: 1;
+  }
+
+  .breadcrumb span { color: var(--red); }
+
+  /* ── CONTENT AREA ── */
+  #content-area {
+    flex: 1;
+    padding: 60px 80px 100px;
+    max-width: 860px;
+  }
+
+  /* ── WELCOME SCREEN ── */
+  #welcome {
+    padding: 0;
+  }
+
+  .welcome-eyebrow {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .welcome-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 64px;
+    color: var(--ink);
+    line-height: 1.1;
+    letter-spacing: 6px;
+    margin-bottom: 8px;
+  }
+
+  .welcome-title span {
+    color: var(--red);
+  }
+
+  .welcome-divider {
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(to right, var(--gold), transparent);
+    margin: 24px 0;
+  }
+
+  .welcome-desc {
+    font-size: 16px;
+    line-height: 2;
+    color: var(--ink-light);
+    max-width: 600px;
+    margin-bottom: 40px;
+  }
+
+  .welcome-stats {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 50px;
+  }
+
+  .stat-item { text-align: center; }
+
+  .stat-num {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 36px;
+    color: var(--red);
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--ink-faint);
+    font-family: 'Noto Sans SC', sans-serif;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .welcome-cta {
+    display: inline-block;
+    padding: 14px 36px;
+    background: var(--ink);
+    color: var(--gold-light);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    border: 1px solid var(--gold);
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+  }
+
+  .welcome-cta:hover {
+    background: var(--red);
+    border-color: var(--red);
+    color: var(--paper);
+  }
+
+  /* ── CHAPTER VIEW ── */
+  #chapter-view { display: none; }
+
+  .chapter-eyebrow {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  .chapter-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 48px;
+    color: var(--ink);
+    line-height: 1.2;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+  }
+
+  .chapter-subtitle {
+    font-size: 18px;
+    color: var(--red);
+    font-weight: 300;
+    margin-bottom: 30px;
+  }
+
+  .chapter-meta {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--paper-darker);
+    border-bottom: 1px solid var(--paper-darker);
+    margin-bottom: 40px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 1px;
+  }
+
+  .chapter-meta-item strong { color: var(--ink-light); }
+
+  .chapter-body {
+    font-size: 17px;
+    line-height: 2.1;
+    color: var(--ink-light);
+  }
+
+  .chapter-body p {
+    margin-bottom: 1.6em;
+    text-indent: 2em;
+  }
+
+  .chapter-body p:first-child::first-letter {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 56px;
+    float: left;
+    line-height: 0.85;
+    margin-right: 8px;
+    margin-top: 8px;
+    color: var(--red);
+  }
+
+  .chapter-body h3 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 26px;
+    color: var(--red);
+    margin: 2em 0 0.8em;
+    letter-spacing: 2px;
+    text-indent: 0;
+  }
+
+  .chapter-body blockquote {
+    border-left: 3px solid var(--gold);
+    padding: 12px 20px;
+    margin: 1.5em 0;
+    background: var(--paper-dark);
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: 15px;
+  }
+
+  .chapter-body .dialogue {
+    background: var(--paper-dark);
+    border-radius: 2px;
+    padding: 20px 28px;
+    margin: 1.5em 0;
+    border-left: 3px solid var(--ink-light);
+  }
+
+  .chapter-body .dialogue p {
+    text-indent: 0;
+    margin-bottom: 0.6em;
+  }
+
+  .chapter-body .dialogue p:last-child { margin-bottom: 0; }
+
+  .chapter-body .speaker {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  .jian-box {
+    margin-top: 50px;
+    padding: 24px 32px;
+    background: var(--ink);
+    border: 1px solid var(--gold);
+    position: relative;
+  }
+
+  .jian-box::before {
+    content: '史鉴';
+    position: absolute;
+    top: -12px;
+    left: 24px;
+    background: var(--ink);
+    padding: 0 12px;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 18px;
+    color: var(--gold-light);
+    letter-spacing: 4px;
+  }
+
+  .jian-box p {
+    color: #c9a84c;
+    font-size: 15px;
+    line-height: 1.9;
+    text-indent: 0 !important;
+  }
+
+  .nav-btns {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 60px;
+    padding-top: 30px;
+    border-top: 1px solid var(--paper-darker);
+    gap: 20px;
+  }
+
+  .nav-btn {
+    padding: 12px 28px;
+    border: 1px solid var(--paper-darker);
+    background: none;
+    cursor: pointer;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    color: var(--ink-faint);
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .nav-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* ── DECORATIVE ELEMENTS ── */
+  .ink-divider {
+    text-align: center;
+    color: var(--gold);
+    font-size: 18px;
+    letter-spacing: 8px;
+    margin: 2em 0;
+    opacity: 0.5;
+  }
+
+  /* ── MOBILE ── */
+  #menu-toggle {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 200;
+    background: var(--ink);
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    font-size: 16px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (max-width: 768px) {
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); }
+    #main { margin-left: 0; }
+    #content-area { padding: 40px 24px 80px; }
+    #menu-toggle { display: flex; }
+    .welcome-title { font-size: 40px; }
+    .chapter-title { font-size: 32px; }
+    #topbar { padding: 0 20px 0 60px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <div class="sidebar-title">鉴</div>
+    <div class="sidebar-subtitle">资治通鉴 · 通俗改写版</div>
+  </div>
+  <div id="toc"></div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <div class="breadcrumb" id="breadcrumb">首页</div>
+  </div>
+
+  <div id="content-area">
+
+    <!-- WELCOME -->
+    <div id="welcome">
+      <div class="welcome-eyebrow">司马光 著 · 现代白话改写</div>
+      <div class="welcome-title">资治<span>通鉴</span></div>
+      <div style="font-family:'Ma Shan Zheng',cursive;font-size:22px;color:var(--ink-faint);letter-spacing:4px;margin-bottom:16px;">第九特区风格·通俗版</div>
+      <div class="welcome-divider"></div>
+      <p class="welcome-desc">
+        原著294卷，跨越1362年，十六个朝代，无数帝王将相。<br>
+        晦涩的文言文藏着最精彩的权谋、战争与人性。<br>
+        这里用现代人读得懂的语言，把那些故事还原出来。<br>
+        以史为鉴，可以知兴替。
+      </p>
+      <div class="welcome-stats">
+        <div class="stat-item">
+          <span class="stat-num" id="stat-vol">11</span>
+          <div class="stat-label">卷册</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-chapter">0</span>
+          <div class="stat-label">已更新回数</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">1362</span>
+          <div class="stat-label">年历史跨度</div>
+        </div>
+      </div>
+      <div class="welcome-cta" onclick="startReading()">开始阅读 →</div>
+    </div>
+
+    <!-- CHAPTER VIEW -->
+    <div id="chapter-view">
+      <div class="chapter-eyebrow" id="cv-eyebrow"></div>
+      <div class="chapter-title" id="cv-title"></div>
+      <div class="chapter-subtitle" id="cv-subtitle"></div>
+      <div class="chapter-meta" id="cv-meta"></div>
+      <div class="chapter-body" id="cv-body"></div>
+      <div class="nav-btns">
+        <button class="nav-btn" id="btn-prev" onclick="navChapter(-1)">← 上一回</button>
+        <button class="nav-btn" onclick="showWelcome()">返回目录</button>
+        <button class="nav-btn" id="btn-next" onclick="navChapter(1)">下一回 →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  DATA STORE — Edit this object to add new chapters
+// ═══════════════════════════════════════════════════════
+const BOOKS = [
+  {
+    id: "vol1",
+    title: "第一卷·战国",
+    period: "前403年—前221年",
+    chapters: [
+      {
+        id: "v1c1",
+        number: "第一回",
+        title: "天下大乱从一场葬礼开始",
+        subtitle: "三家分晋",
+        period: "前453年—前403年",
+        era: "战国·开篇",
+        status: "published",
+        body: `
+<p>公元前453年，晋国，赵、魏、韩三家联手，在晋阳城外的汾河边，把一个叫智伯瑶的男人淹死了。</p>
+
+<p>这件事，在当时看来，不过是贵族内斗的又一个收尾。晋国的卿大夫们互相火并已经打了将近两百年，死过的人比这惨得多。围观的人拍拍手，该干嘛干嘛去了。</p>
+
+<p>但司马光把这一年写在了《资治通鉴》的第一页。</p>
+
+<p>他要告诉所有后来的读者：这不是普通的内斗。这是一道裂缝，从这里开始，整个中国的秩序，碎了。</p>
+
+<h3>一、智伯瑶是个什么样的人</h3>
+
+<p>要讲三家分晋，就得先讲一个人——智伯瑶。</p>
+
+<p>智伯瑶是晋国智氏家族的宗主，当时晋国权力最大的卿大夫。晋国这时候已经是个奇葩政体：名义上有国君，实际上国君就是个吉祥物，真正的权力掌握在赵、魏、韩、智四大家族手里，史称"四卿专晋"。而智伯瑶，就是这四家里最强的那个。</p>
+
+<p>他这个人，才华是真的有，问题也是真的大。</p>
+
+<p>智伯瑶的家臣智果曾经专门跑去族长那里，要求把智瑶从族谱里除名。族长懵了，问他为什么。智果说了一段话，被司马光原文记在了通鉴里，大意是——</p>
+
+<div class="dialogue">
+<p><span class="speaker">智果：</span>智瑶这个人有五项过人之处：仪表堂堂，武艺高强，才华横溢，能写好文章，还意志坚定。但他有一个致命的毛病——心胸狭窄，又残忍傲慢。以他的五项才能去欺压别人，谁能受得了？如果他最终得志，智氏家族必然跟着他一起完蛋。我不想死，所以我要和他划清界限。</p>
+</div>
+
+<p>族长没听，觉得智果是在危言耸听。</p>
+
+<p>后来的事证明，智果是当时晋国看得最清楚的人。</p>
+
+<h3>二、一顿饭吃出来的死仇</h3>
+
+<p>智伯瑶当政期间，把持朝政，气焰熏天。有一次，他摆宴席请韩、魏、赵三家的家主一起吃饭，酒过三巡，他突然转头，把一杯酒浇到了韩康子的脸上。</p>
+
+<p>大厅里瞬间安静。</p>
+
+<p>韩康子脸色铁青，身边的家臣段规按住了剑柄，死死盯着智伯瑶。但韩康子忍住了，低头，擦了擦脸，继续喝酒。</p>
+
+<p>宴席散了之后，左右的人愤愤不平，说主公您怎么能这样受辱？韩康子长叹一口气：</p>
+
+<div class="dialogue">
+<p><span class="speaker">韩康子：</span>智伯这个人，睚眦必报。他要的就是让我发火，好找借口灭了我。我不能给他这个机会。</p>
+</div>
+
+<p>忍了。但仇，记下了。</p>
+
+<p>智伯瑶羞辱韩康子，可能只是酒后的一时狂傲，也可能是蓄意试探。但他显然没把这件事放在心上，因为紧接着，他又去欺负赵家了——而且这一次，是正式索地。</p>
+
+<h3>三、赵襄子的骨气</h3>
+
+<p>智伯瑶以晋国公室的名义，向韩、魏、赵三家各索要一块封地，说是要"归还"给晋国国君，充实王室。</p>
+
+<p>这是个套路。三家心里都清楚，土地一旦给出去，名义上归了国君，实际上进了智伯瑶的口袋。</p>
+
+<p>韩康子咬牙给了。魏桓子憋屈地给了。轮到赵家，赵氏家主赵襄子直接拒绝了。</p>
+
+<div class="dialogue">
+<p><span class="speaker">赵襄子：</span>土地是祖宗传下来的，凭什么给你？不给。</p>
+</div>
+
+<p>智伯瑶大怒，立刻联合韩、魏两家，三路大军压境，围攻赵氏的大本营——晋阳城。</p>
+
+<p>赵襄子退入晋阳死守。智伯瑶引来晋水，挖开汾河，把整座晋阳城泡在了水里。水位涨到城墙垛口，城内炊烟稀少，粮食告急，老鼠被抓来当食物。晋阳被围，整整两年。</p>
+
+<p>城里的人熬着，城外的联军也在熬。</p>
+
+<p>这时候，赵襄子做了一个决定，这个决定后来改变了整个战局。</p>
+
+<h3>四、最关键的一次夜谈</h3>
+
+<p>赵襄子派出了他的谋士张孟谈，秘密出城，去见韩康子和魏桓子。</p>
+
+<p>张孟谈只说了几句话：</p>
+
+<div class="dialogue">
+<p><span class="speaker">张孟谈：</span>嘴唇没了，牙齿就会挨冻。今天智伯联合你们两家来灭赵，赵国一旦亡了，下一个挨收拾的是谁？你们自己想清楚。</p>
+</div>
+
+<p>韩康子和魏桓子对视了一眼。</p>
+
+<p>他们当然早就想清楚了。这两年，他们每天都要去智伯瑶的大帐汇报战况，智伯瑶每次都趾高气扬，稍有不满就当众羞辱他们。魏桓子的家臣任章私下里说：智伯每天骄横到这种程度，离死也不远了。韩国的谋士段规也劝韩康子说：识时务者为俊杰，现在要看清楚风向。</p>
+
+<p>两人心里早就有了答案，只等一个合适的人来捅破这层窗户纸。</p>
+
+<p>张孟谈就是那个人。</p>
+
+<p>当夜，三方密谋已定：反水。</p>
+
+<h3>五、水淹智伯瑶</h3>
+
+<p>约定好的那一天夜里，赵氏的人悄悄挖开了水坝，把水倒灌向智伯瑶的军营。</p>
+
+<p>智伯瑶的士兵从睡梦中惊醒，大水漫进营帐，一片混乱。</p>
+
+<p>韩、魏两军同时从两翼杀出。</p>
+
+<p>智伯瑶的大军，就这样在自己引来的水里，全线崩溃。</p>
+
+<p>智伯瑶本人死于乱军之中，一说被赵襄子亲手所杀。赵襄子对这个把自己泡了两年水的男人恨之入骨，据说把他的头骨漆成了饮器，日日相对，解恨。</p>
+
+<p>智氏家族，就此覆灭。</p>
+
+<p>智果当年改的那个姓，救了他一条命。</p>
+
+<h3>六、三家分晋，周天子的那一跪</h3>
+
+<p>灭了智伯瑶之后，赵、魏、韩三家瓜分了智氏的全部土地，势力大涨。晋国国君彻底成了摆设。</p>
+
+<p>前403年，距晋阳之战整整五十年后，赵、魏、韩三家的使者联袂来到洛阳，面见周威烈王，要求正式册封三家为诸侯。</p>
+
+<p>周威烈王答应了。</p>
+
+<p>就这样，原本是晋国臣子的三个家族，摇身一变，成了合法的诸侯国君。赵国、魏国、韩国，正式登上历史舞台。</p>
+
+<p>这是一个看起来平常的外交事件，但司马光为什么把这一年定为《资治通鉴》的起点？他在书的开头就给出了答案：</p>
+
+<div class="dialogue">
+<p><span class="speaker">司马光：</span>周威烈王册封三家，这是礼崩乐坏的开始。天子亲手承认了以下犯上的合法性，从此，谁强谁就是诸侯，谁有兵谁就能称王。这个口子一旦开了，就再也堵不上了。</p>
+</div>
+
+<p>这不只是晋国的问题，这是整个周朝秩序的死亡证明。</p>
+
+<h3>七、为什么赵氏能赢</h3>
+
+<p>回到晋阳之战本身，有一个细节值得多看一眼。</p>
+
+<p>晋阳被围的第二年，城里弹尽粮绝，形势万分危急。赵襄子叫来家臣张孟谈，问他还有什么办法。张孟谈说了一句话：</p>
+
+<div class="dialogue">
+<p><span class="speaker">张孟谈：</span>主公，您的祖父赵简子当年建晋阳城时，曾经特意在宫室的地基里埋了一批铜，说是留给后代急用的。现在，或许可以找一找。</p>
+</div>
+
+<p>赵襄子让人挖地，真的挖出了大量的铜和积蓄。</p>
+
+<p>这个细节，是真实历史，不是传说。赵简子经营晋阳数十年，把它当作赵氏最后的退路来建设。城墙坚固，粮仓充实，民心向背，早就备好了。</p>
+
+<p>赵氏能在晋阳扛过两年，不是运气，是他的祖父几十年前就埋下的种子。</p>
+
+<p>而智伯瑶败得如此彻底，也不是运气——是他用一生的傲慢，把所有人都逼到了对立面。</p>
+
+<div class="ink-divider">※ ※ ※</div>
+
+<div class="jian-box">
+<p>司马光写三家分晋，开篇就讲"名分"。他说，周威烈王册封三家，错不在三家强横，错在天子自己坏了规矩。上位者一旦亲手拆掉了秩序的围栏，就别指望下面的人还会守规矩。智伯瑶这个人，才干出众，却把傲慢当成了权力的装饰品。他能看清赵、韩、魏各自的弱点，却从来没想过——自己的致命弱点，是让所有人都恨他。一个人，无论多强，一旦被逼得天下皆敌，结局只有一个。</p>
+</div>
+`
+      },
+      {
+        id: "v1c2",
+        number: "第二回",
+        title: "一个人改变了一个国家",
+        subtitle: "商鞅变法",
+        period: "前359年—前338年",
+        era: "战国·秦国崛起",
+        status: "pending",
+        body: ""
+      },
+      {
+        id: "v1c3",
+        number: "第三回",
+        title: "六国联盟为何是一个笑话",
+        subtitle: "合纵连横",
+        period: "前333年—前288年",
+        era: "战国·外交博弈",
+        status: "pending",
+        body: ""
+      },
+      {
+        id: "v1c4",
+        number: "第四回",
+        title: "四十万人的坟墓",
+        subtitle: "长平之战",
+        period: "前262年—前260年",
+        era: "战国·秦赵决战",
+        status: "pending",
+        body: ""
+      },
+      {
+        id: "v1c5",
+        number: "第五回",
+        title: "横扫六合，天下归一",
+        subtitle: "秦灭六国",
+        period: "前230年—前221年",
+        era: "战国·终章",
+        status: "pending",
+        body: ""
+      }
+    ]
+  },
+  {
+    id: "vol2",
+    title: "第二卷·秦朝",
+    period: "前221年—前206年",
+    chapters: [
+      { id: "v2c1", number: "第六回", title: "一个男人想要永生", subtitle: "秦始皇与帝国", period: "前221年—前210年", era: "秦朝·鼎盛", status: "pending", body: "" },
+      { id: "v2c2", number: "第七回", title: "沙丘上的那场密谋", subtitle: "沙丘政变", period: "前210年", era: "秦朝·转折", status: "pending", body: "" },
+      { id: "v2c3", number: "第八回", title: "第一声反抗的怒吼", subtitle: "陈胜吴广起义", period: "前209年", era: "秦末·乱起", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol3",
+    title: "第三卷·楚汉",
+    period: "前206年—前202年",
+    chapters: [
+      { id: "v3c1", number: "第九回", title: "那顿饭差点改变历史", subtitle: "鸿门宴", period: "前206年", era: "楚汉·开局", status: "pending", body: "" },
+      { id: "v3c2", number: "第十回", title: "最后的西楚霸王", subtitle: "垓下之围", period: "前202年", era: "楚汉·终局", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol4",
+    title: "第四卷·西汉",
+    period: "前202年—8年",
+    chapters: [
+      { id: "v4c1", number: "第十一回", title: "两个皇帝的极简治国术", subtitle: "文景之治", period: "前180年—前141年", era: "西汉·盛世", status: "pending", body: "" },
+      { id: "v4c2", number: "第十二回", title: "他把匈奴打到漠北去哭", subtitle: "汉武帝与霍去病", period: "前129年—前117年", era: "西汉·汉武", status: "pending", body: "" },
+      { id: "v4c3", number: "第十三回", title: "最惨烈的太子之死", subtitle: "巫蛊之祸", period: "前91年", era: "西汉·衰变", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol5",
+    title: "第五卷·新朝·东汉",
+    period: "8年—220年",
+    chapters: [
+      { id: "v5c1", number: "第十四回", title: "一个儒生把汉朝搞没了", subtitle: "王莽篡汉", period: "8年—23年", era: "新朝", status: "pending", body: "" },
+      { id: "v5c2", number: "第十五回", title: "从卖草鞋到重建帝国", subtitle: "光武中兴", period: "25年—57年", era: "东汉·开国", status: "pending", body: "" },
+      { id: "v5c3", number: "第十六回", title: "一刀砍向了读书人", subtitle: "党锢之祸", period: "166年—184年", era: "东汉·衰落", status: "pending", body: "" },
+      { id: "v5c4", number: "第十七回", title: "西凉来的那头狼", subtitle: "董卓入京", period: "189年", era: "东汉·崩塌", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol6",
+    title: "第六卷·三国",
+    period: "220年—280年",
+    chapters: [
+      { id: "v6c1", number: "第十八回", title: "那个乱世需要一个枭雄", subtitle: "曹操崛起", period: "189年—200年", era: "三国·曹魏", status: "pending", body: "" },
+      { id: "v6c2", number: "第十九回", title: "以少胜多的神话是怎么炼成的", subtitle: "赤壁之战", period: "208年", era: "三国·赤壁", status: "pending", body: "" },
+      { id: "v6c3", number: "第二十回", title: "那片星落的秋风五丈原", subtitle: "诸葛亮北伐与陨落", period: "228年—234年", era: "三国·蜀汉", status: "pending", body: "" },
+      { id: "v6c4", number: "第二十一回", title: "阴谋家的基因", subtitle: "司马家的夺权之路", period: "249年—265年", era: "三国·魏晋", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol7",
+    title: "第七卷·两晋",
+    period: "280年—420年",
+    chapters: [
+      { id: "v7c1", number: "第二十二回", title: "皇室内部的屠杀游戏", subtitle: "八王之乱", period: "291年—306年", era: "西晋·乱起", status: "pending", body: "" },
+      { id: "v7c2", number: "第二十三回", title: "当文明被铁蹄踩碎", subtitle: "五胡乱华·衣冠南渡", period: "316年—317年", era: "东晋·南渡", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol8",
+    title: "第八卷·南北朝",
+    period: "420年—589年",
+    chapters: [
+      { id: "v8c1", number: "第二十四回", title: "一百六十九年的分裂与撕裂", subtitle: "南北朝群雄", period: "420年—589年", era: "南北朝", status: "pending", body: "" },
+      { id: "v8c2", number: "第二十五回", title: "鲜卑人选择成为汉人", subtitle: "北魏孝文帝改革", period: "471年—499年", era: "北魏", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol9",
+    title: "第九卷·隋朝",
+    period: "589年—618年",
+    chapters: [
+      { id: "v9c1", number: "第二十六回", title: "他统一了天下，他的儿子毁掉了它", subtitle: "隋文帝与隋炀帝", period: "581年—618年", era: "隋朝", status: "pending", body: "" },
+      { id: "v9c2", number: "第二十七回", title: "三次失败的战争葬送了一个王朝", subtitle: "三征高句丽", period: "612年—614年", era: "隋末", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol10",
+    title: "第十卷·唐朝",
+    period: "618年—907年",
+    chapters: [
+      { id: "v10c1", number: "第二十八回", title: "玄武门那个血腥的早晨", subtitle: "玄武门之变", period: "626年", era: "唐朝·开国", status: "pending", body: "" },
+      { id: "v10c2", number: "第二十九回", title: "他让世界知道了唐朝的名字", subtitle: "贞观之治", period: "627年—649年", era: "唐朝·盛世", status: "pending", body: "" },
+      { id: "v10c3", number: "第三十回", title: "那个女人坐上了龙椅", subtitle: "武则天称帝", period: "690年—705年", era: "武周", status: "pending", body: "" },
+      { id: "v10c4", number: "第三十一回", title: "繁华是怎么碎掉的", subtitle: "安史之乱", period: "755年—763年", era: "唐朝·衰变", status: "pending", body: "" }
+    ]
+  },
+  {
+    id: "vol11",
+    title: "第十一卷·五代十国",
+    period: "907年—959年",
+    chapters: [
+      { id: "v11c1", number: "第三十二回", title: "乱世的最后五十三年", subtitle: "五代十国终章", period: "907年—959年", era: "五代十国", status: "pending", body: "" }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let currentChapterIndex = 0;
+let allChapters = [];
+
+function init() {
+  // flatten all chapters
+  BOOKS.forEach(vol => {
+    vol.chapters.forEach(ch => {
+      allChapters.push({ ...ch, volTitle: vol.title, volPeriod: vol.period });
+    });
+  });
+  buildTOC();
+  updateStats();
+}
+
+function updateStats() {
+  const written = allChapters.filter(c => c.status === "published").length;
+  document.getElementById('stat-chapter').textContent = written;
+}
+
+function buildTOC() {
+  const toc = document.getElementById('toc');
+  toc.innerHTML = '';
+  BOOKS.forEach((vol, vi) => {
+    const group = document.createElement('div');
+    group.className = 'vol-group';
+
+    const header = document.createElement('div');
+    header.className = 'vol-header';
+    header.innerHTML = `<span>${vol.title}</span><span class="vol-arrow">▶</span>`;
+    header.onclick = () => {
+      header.classList.toggle('open');
+      list.classList.toggle('open');
+    };
+
+    const list = document.createElement('div');
+    list.className = 'chapter-list';
+
+    // auto-open first vol that has published chapters
+    const hasPublished = vol.chapters.some(c => c.status === 'published');
+    if (hasPublished || vi === 0) {
+      header.classList.add('open');
+      list.classList.add('open');
+    }
+
+    vol.chapters.forEach(ch => {
+      const a = document.createElement('a');
+      a.className = 'chapter-item' + (ch.status !== 'published' ? ' locked' : '');
+      a.dataset.id = ch.id;
+      a.innerHTML = ch.status === 'published'
+        ? `${ch.number}·${ch.subtitle}`
+        : `${ch.number}·${ch.subtitle}<span class="coming-badge">待更新</span>`;
+      if (ch.status === 'published') {
+        a.onclick = () => openChapter(ch.id);
+      }
+      list.appendChild(a);
+    });
+
+    group.appendChild(header);
+    group.appendChild(list);
+    toc.appendChild(group);
+  });
+}
+
+function openChapter(id) {
+  const idx = allChapters.findIndex(c => c.id === id);
+  if (idx === -1 || allChapters[idx].status !== 'published') return;
+  currentChapterIndex = idx;
+  renderChapter(allChapters[idx]);
+
+  // update active state
+  document.querySelectorAll('.chapter-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+
+  // close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function renderChapter(ch) {
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chapter-view').style.display = 'block';
+
+  document.getElementById('cv-eyebrow').textContent = ch.era + ' · ' + ch.period;
+  document.getElementById('cv-title').textContent = ch.title;
+  document.getElementById('cv-subtitle').textContent = '——' + ch.subtitle;
+  document.getElementById('cv-meta').innerHTML = `
+    <span><strong>卷册</strong>：${ch.volTitle}</span>
+    <span><strong>时间</strong>：${ch.period}</span>
+    <span><strong>回次</strong>：${ch.number}</span>
+  `;
+  document.getElementById('cv-body').innerHTML = ch.body;
+  document.getElementById('breadcrumb').innerHTML = `${ch.volTitle} <span>›</span> ${ch.number}`;
+
+  // nav buttons
+  const prev = allChapters.slice(0, currentChapterIndex).reverse().find(c => c.status === 'published');
+  const next = allChapters.slice(currentChapterIndex + 1).find(c => c.status === 'published');
+  document.getElementById('btn-prev').style.visibility = prev ? 'visible' : 'hidden';
+  document.getElementById('btn-next').style.visibility = next ? 'visible' : 'hidden';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function navChapter(dir) {
+  if (dir === -1) {
+    const prev = allChapters.slice(0, currentChapterIndex).reverse().find(c => c.status === 'published');
+    if (prev) openChapter(prev.id);
+  } else {
+    const next = allChapters.slice(currentChapterIndex + 1).find(c => c.status === 'published');
+    if (next) openChapter(next.id);
+  }
+}
+
+function showWelcome() {
+  document.getElementById('welcome').style.display = 'block';
+  document.getElementById('chapter-view').style.display = 'none';
+  document.getElementById('breadcrumb').textContent = '首页';
+  document.querySelectorAll('.chapter-item').forEach(el => el.classList.remove('active'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startReading() {
+  const first = allChapters.find(c => c.status === 'published');
+  if (first) {
+    openChapter(first.id);
+  } else {
+    alert('第一回即将上线，敬请期待！');
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+init();
+</script>
+</body>
+</html>
